@@ -1,6 +1,6 @@
 /**
  * @file main.c
- * @author Giiancarlo Buenaflor <e51837398@student.tuwien.ac.at>
+ * @author Giancarlo Buenaflor <e51837398@student.tuwien.ac.at>
  * @date 18.12.2020
  *
  * @brief Main program module.
@@ -17,7 +17,7 @@
 #include <errno.h>
 #include <stdbool.h>
 
-/** Defines the step size size in which the lines array can grow if the max number of elements is reached. */
+/** Defines the step size in which the lines array can grow if the max number of elements is reached. */
 #define STEPSIZE 10;
 
 /** The program name. */
@@ -31,7 +31,7 @@ static ssize_t max_buffer_size = 0;
  * @brief This function writes helpful error information about the program to stderr and exits with an EXIT_FAILURE status
  * @param msg The message as char*.
  */
-void error_exit(const char *msg) {
+static void error_exit(const char *msg) {
     fprintf(stderr, "%s\n", msg);
     exit(EXIT_FAILURE);
 }
@@ -276,8 +276,12 @@ int main(int argc, char *argv[]) {
         line = NULL;
     }
 
+    if (numlines == 0) {
+        error_exit("No input given, cannot be sorted");
+    }
+
 	if (numlines == 1) {
-        fprintf(stdout, "%s", lines[0]);
+        print(lines[0]);
         exit(EXIT_SUCCESS);
     }
 
@@ -400,12 +404,23 @@ int main(int argc, char *argv[]) {
     /* Wait for child processes and then merge parts */
 	
 	int status1, status2;
-	if (waitpid(pid1, &status1, 0) == -1 || status1 != EXIT_SUCCESS) { 
-		error_exit("Error occured during waiting for child: pid1");
+	if (waitpid(pid1, &status1, 0) == -1) { 
+		error_exit("Error occured during waiting for child: pid1 (wait is -1)");
 	}
-	if (waitpid(pid2, &status2, 0) == -1 || status2 != EXIT_SUCCESS) {
-		error_exit("Error occured during waiting for child: pid2");
+    if (WIFEXITED(status1)) {
+        if (WEXITSTATUS(status1) != EXIT_SUCCESS) {
+            error_exit("Error occured during waiting for child: pid1 (exit status is not success)");
+        }
+    }
+
+	if (waitpid(pid2, &status2, 0) == -1) {
+		error_exit("Error occured during waiting for child: pid2 (wait is -1)");
 	}
+    if (WIFEXITED(status2)) {
+        if (WEXITSTATUS(status2) != EXIT_SUCCESS) {
+            error_exit("Error occured during waiting for child: pid2 (exit status is not success)");
+        }
+    }
 
     mergesort(rd_pipe_1[0], rd_pipe_2[0], wr_count1, wr_count2);
 
